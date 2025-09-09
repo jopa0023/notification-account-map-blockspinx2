@@ -15,6 +15,30 @@ if not _G.WebhookURL or _G.WebhookURL == "" then
     return
 end
 
+local function getMoney()
+    local player = game.Players.LocalPlayer
+    local moneyLabel = player:WaitForChild("PlayerGui"):FindFirstChildWhichIsA("ScreenGui", true)
+
+    local cash = "N/A"
+    local bank = "N/A"
+
+    -- ค้นหาเงินในตัว (HUD มุมขวาบน)
+    local cashGui = player.PlayerGui:FindFirstChild("Cash", true)
+    if cashGui and cashGui:IsA("TextLabel") then
+        cash = cashGui.Text
+    end
+
+    -- ค้นหาเงินธนาคาร (ATM GUI)
+    for _, gui in pairs(player.PlayerGui:GetDescendants()) do
+        if gui:IsA("TextLabel") and string.find(gui.Text, "Bank Balance") then
+            bank = gui.Text
+            break
+        end
+    end
+
+    return cash, bank
+end
+
 -- ======================================
 -- 📌 ฟังก์ชันส่งแจ้งเตือน Discord
 -- ======================================
