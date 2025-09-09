@@ -1,61 +1,41 @@
--- ======================================
--- 📌 ตรวจสอบ Key ก่อนเริ่มใช้งาน
--- ======================================
 if not _G.key or _G.key == "" then
     warn("[ JOPA ] คุณยังไม่ได้ Redeem Key / คุณอาจได้รับ Script มาในทางที่ผิด")
     game.Players.LocalPlayer:Kick("[ JOPA ] คุณยังไม่ได้ Redeem Key / คุณอาจได้รับ Script มาในทางที่ผิด")
     return
 end
 
--- ======================================
--- 📌 ตรวจสอบ Webhook
--- ======================================
-if not _G.WebhookURL or _G.WebhookURL == "" then
-    warn("[ JOPA ] ไม่พบ WebhookURL กรุณาตั้งค่าใน _G.WebhookURL")
+if not _G.Setting or not _G.Setting.WebhookURL or _G.Setting.WebhookURL == "" then
+    warn("[ JOPA ] ไม่พบ WebhookURL กรุณาตั้งค่าใน _G.Setting.WebhookURL")
     return
 end
 
-local function getMoney()
-    local player = game.Players.LocalPlayer
-    local moneyLabel = player:WaitForChild("PlayerGui"):FindFirstChildWhichIsA("ScreenGui", true)
-
-    local cash = "N/A"
-    local bank = "N/A"
-
-    -- ค้นหาเงินในตัว (HUD มุมขวาบน)
-    local cashGui = player.PlayerGui:FindFirstChild("Cash", true)
-    if cashGui and cashGui:IsA("TextLabel") then
-        cash = cashGui.Text
-    end
-
-    -- ค้นหาเงินธนาคาร (ATM GUI)
-    for _, gui in pairs(player.PlayerGui:GetDescendants()) do
-        if gui:IsA("TextLabel") and string.find(gui.Text, "Bank Balance") then
-            bank = gui.Text
-            break
-        end
-    end
-
-    return cash, bank
-end
-
--- ======================================
--- 📌 ฟังก์ชันส่งแจ้งเตือน Discord
--- ======================================
 local HttpService = game:GetService("HttpService")
 local function sendDiscord(data)
     local json = HttpService:JSONEncode(data)
     request({
-        Url = _G.WebhookURL,
+        Url = _G.Setting.WebhookURL,
         Method = "POST",
         Headers = {["Content-Type"] = "application/json"},
         Body = json
     })
 end
 
--- ======================================
--- 📌 ตัวอย่างการส่ง Embed พร้อมโลโก้ + แบนเนอร์
--- ======================================
+local function sendStatus()
+    local player = game.Players.LocalPlayer
+    local money = "N/A"
+    local bank = "N/A"
+
+    -- ดึงค่า Money/Bank ถ้ามีใน leaderstats
+    if player:FindFirstChild("leaderstats") then
+        local stats = player.leaderstats
+        if stats:FindFirstChild("Money") then
+            money = tostring(stats.Money.Value)
+        end
+        if stats:FindFirstChild("Bank") then
+            bank = tostring(stats.Bank.Value)
+        end
+    end
+
 local function sendStatus()
     local player = game.Players.LocalPlayer
     local embed = {
@@ -77,7 +57,6 @@ local function sendStatus()
     sendDiscord(embed)
 end
 
--- เรียกใช้ทุก ๆ 10 นาที
 while task.wait(600) do
     pcall(sendStatus)
 end
