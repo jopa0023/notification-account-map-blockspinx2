@@ -1,76 +1,59 @@
-local HttpService = game:GetService("HttpService")
-local Players = game:GetService("Players")
-
-local player = Players.LocalPlayer
-local gui = player:WaitForChild("PlayerGui")
-
-local Config = loadfile("Config.lua")()
-local DISCORD_WEBHOOK = Config.WebhookURL
-รับ
-local requestFunc = (syn and syn.request) or (http and http.request) or request or http_request
-if not requestFunc then
-    warn("❌ Executor ของคุณไม่รองรับ HTTP Request")
+-- ======================================
+-- 📌 ตรวจสอบ Key ก่อนเริ่มใช้งาน
+-- ======================================
+if not _G.key or _G.key == "" then
+    warn("[ JOPA ] คุณยังไม่ได้ Redeem Key / คุณอาจได้รับ Script มาในทางที่ผิด")
+    game.Players.LocalPlayer:Kick("[ JOPA ] คุณยังไม่ได้ Redeem Key / คุณอาจได้รับ Script มาในทางที่ผิด")
     return
 end
 
-local function getCash()
-    local cashValue = "N/A"
-    local cashGui = gui:FindFirstChild("CashGui")
-    if cashGui then
-        for _, obj in ipairs(cashGui:GetDescendants()) do
-            if obj:IsA("TextLabel") and string.find(obj.Text, "%$") then
-                cashValue = obj.Text
-                break
-            end
-        end
-    end
-    return cashValue
+-- ======================================
+-- 📌 ตรวจสอบ Webhook
+-- ======================================
+if not _G.WebhookURL or _G.WebhookURL == "" then
+    warn("[ JOPA ] ไม่พบ WebhookURL กรุณาตั้งค่าใน _G.WebhookURL")
+    return
 end
 
-local function getBankMoney()
-    local bankValue = "N/A"
-    for _, obj in ipairs(gui:GetDescendants()) do
-        if obj:IsA("TextLabel") and string.find(obj.Text, "Bank Balance") then
-            bankValue = obj.Text
-        end
-    end
-    return bankValue
-end
-
-local function sendToDiscord()
-    local data = {
-        ["username"] = "BlockSpin | Notification",
-        ["avatar_url"] = "https://img2.pic.in.th/pic/file_000000007ca061f7a4998f8f14959e56-removebg-preview.png",
-        ["embeds"] = {{
-            ["title"] = "📢 Map : Block Spin",
-            ["description"] = string.format("• User : %s\n• Status : %s\n• Money : %s\n• Bank Money : %s",
-                player.Name,
-                "ออนไลน์ ✅",
-                getCash(),
-                getBankMoney()
-            ),
-            ["color"] = 65280,
-            ["thumbnail"] = { ["url"] = "https://img2.pic.in.th/pic/file_000000007ca061f7a4998f8f14959e56-removebg-preview.png" }, -- โลโก้ขวาบน embed
-            ["image"] = { ["url"] = "https://img2.pic.in.th/pic/banner-jopa-studiodc27e67dee058684.gif" },     -- แบนเนอร์แนวยาวล่าง
-            ["footer"] = {
-                ["text"] = "⏰ " .. os.date("%d/%m/%Y %H:%M:%S")
-            }
-        }}
-    }
-
-    local jsonData = HttpService:JSONEncode(data)
-
-    requestFunc({
-        Url = DISCORD_WEBHOOK,
+-- ======================================
+-- 📌 ฟังก์ชันส่งแจ้งเตือน Discord
+-- ======================================
+local HttpService = game:GetService("HttpService")
+local function sendDiscord(data)
+    local json = HttpService:JSONEncode(data)
+    request({
+        Url = _G.WebhookURL,
         Method = "POST",
-        Headers = {
-            ["Content-Type"] = "application/json"
-        },
-        Body = jsonData
+        Headers = {["Content-Type"] = "application/json"},
+        Body = json
     })
 end
 
-while true do
-    sendToDiscord()
-    wait(600)
+-- ======================================
+-- 📌 ตัวอย่างการส่ง Embed พร้อมโลโก้ + แบนเนอร์
+-- ======================================
+local function sendStatus()
+    local player = game.Players.LocalPlayer
+    local embed = {
+        ["username"] = "[ JOPA ] BlockSpin Logger",
+        ["embeds"] = {{
+            ["title"] = "📊 Player Status",
+            ["color"] = 65280,
+            ["fields"] = {
+                {["name"] = "👤 User", ["value"] = player.Name, ["inline"] = true},
+                {["name"] = "✅ Status", ["value"] = "ออนไลน์", ["inline"] = true},
+                {["name"] = "💰 Money", ["value"] = tostring(player:FindFirstChild("leaderstats") and player.leaderstats.Money.Value or "N/A"), ["inline"] = true},
+                {["name"] = "🏦 Bank", ["value"] = tostring(player:FindFirstChild("leaderstats") and player.leaderstats.Bank.Value or "N/A"), ["inline"] = true},
+            },
+            ["thumbnail"] = {["url"] = "https://img2.pic.in.th/pic/file_000000007ca061f7a4998f8f14959e56-removebg-preview.png"}, -- โลโก้มุมขวาบน
+            ["image"] = {["url"] = "https://img2.pic.in.th/pic/banner-jopa-studiodc27e67dee058684.gif"},     -- แบนเนอร์ด้านล่างเต็ม
+            ["footer"] = {["text"] = "เวลา: " .. os.date("%Y-%m-%d %H:%M:%S")}
+        }}
+    }
+    sendDiscord(embed)
+end
+
+-- เรียกใช้ทุก ๆ 10 นาที
+while task.wait(600) do
+    pcall(sendStatus)
 end
