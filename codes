@@ -1,14 +1,3 @@
--- ==========================
--- CONFIG ส่วนนี้คุณแก้เอง
--- ==========================
-_G.Setting = {
-    WebhookURL = "https://discord.com/api/webhooks/xxxxxxxx/xxxxxxxx"
-}
-_G.key = "SANOOK-1A85C073"
-
--- ==========================
--- CHECK KEY + WEBHOOK
--- ==========================
 if not _G.key or _G.key == "" then
     warn("[ JOPA ] คุณยังไม่ได้ Redeem Key / คุณอาจได้รับ Script มาในทางที่ผิด")
     game.Players.LocalPlayer:Kick("[ JOPA ] คุณยังไม่ได้ Redeem Key / คุณอาจได้รับ Script มาในทางที่ผิด")
@@ -20,21 +9,12 @@ if not _G.Setting or not _G.Setting.WebhookURL or _G.Setting.WebhookURL == "" th
     return
 end
 
--- ==========================
--- REQUEST FUNCTION
--- ==========================
-local req = (syn and syn.request) or (http and http.request) or (fluxus and fluxus.request) or request
-if not req then
-    warn("[ JOPA ] ไม่สามารถส่ง Webhook ได้ (ไม่พบ request function)")
-    return
-end
-
--- ==========================
--- ฟังก์ชันส่ง Discord
--- ==========================
 local HttpService = game:GetService("HttpService")
+local player = game.Players.LocalPlayer
+
 local function sendDiscord(data)
     local json = HttpService:JSONEncode(data)
+    local req = (syn and syn.request) or (http and http.request) or request
     req({
         Url = _G.Setting.WebhookURL,
         Method = "POST",
@@ -43,17 +23,28 @@ local function sendDiscord(data)
     })
 end
 
--- ==========================
--- ฟังก์ชันดึงค่า Player Stats
--- ==========================
 local function sendStatus()
-    local player = game.Players.LocalPlayer
-    local stats = player:FindFirstChild("leaderstats")
+    local money = "N/A"
+    local bank = "N/A"
+    local level = "N/A"
+    local car = "N/A"
 
-    local money = (stats and stats:FindFirstChild("Money")) and tostring(stats.Money.Value) or "N/A"
-    local bank  = (stats and stats:FindFirstChild("Bank"))  and tostring(stats.Bank.Value)  or "N/A"
-    local level = (stats and stats:FindFirstChild("Level")) and tostring(stats.Level.Value) or "N/A"
-    local car   = (stats and stats:FindFirstChild("Car"))   and tostring(stats.Car.Value)   or "N/A"
+    -- ดึงค่าจาก leaderstats
+    if player:FindFirstChild("leaderstats") then
+        local stats = player.leaderstats
+        if stats:FindFirstChild("Money") then
+            money = tostring(stats.Money.Value)
+        end
+        if stats:FindFirstChild("Bank") then
+            bank = tostring(stats.Bank.Value)
+        end
+        if stats:FindFirstChild("Level") then
+            level = tostring(stats.Level.Value)
+        end
+        if stats:FindFirstChild("Car") then
+            car = tostring(stats.Car.Value)
+        end
+    end
 
     local embed = {
         ["username"] = "[ JOPA ] BlockSpin Logger",
@@ -62,7 +53,6 @@ local function sendStatus()
             ["color"] = 65280,
             ["fields"] = {
                 {["name"] = "👤 User", ["value"] = player.Name, ["inline"] = true},
-                {["name"] = "✅ Status", ["value"] = "ออนไลน์", ["inline"] = true},
                 {["name"] = "💰 Money", ["value"] = money, ["inline"] = true},
                 {["name"] = "🏦 Bank", ["value"] = bank, ["inline"] = true},
                 {["name"] = "⭐ Level", ["value"] = level, ["inline"] = true},
@@ -73,13 +63,13 @@ local function sendStatus()
             ["footer"] = {["text"] = "เวลา: " .. os.date("%Y-%m-%d %H:%M:%S")}
         }}
     }
-
     sendDiscord(embed)
 end
 
--- ==========================
--- Loop ส่งข้อมูลทุก 10 นาที
--- ==========================
+-- ส่งครั้งแรกทันที
+pcall(sendStatus)
+
+-- ส่งทุก 10 นาที
 while task.wait(600) do
     pcall(sendStatus)
 end
