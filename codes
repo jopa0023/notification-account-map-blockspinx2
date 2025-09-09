@@ -1,14 +1,23 @@
+-- ======================================
+-- 📌 ตรวจสอบ Key ก่อนเริ่มใช้งาน
+-- ======================================
 if not _G.key or _G.key == "" then
     warn("[ JOPA ] คุณยังไม่ได้ Redeem Key / คุณอาจได้รับ Script มาในทางที่ผิด")
     game.Players.LocalPlayer:Kick("[ JOPA ] คุณยังไม่ได้ Redeem Key / คุณอาจได้รับ Script มาในทางที่ผิด")
     return
 end
 
+-- ======================================
+-- 📌 ตรวจสอบ Webhook
+-- ======================================
 if not _G.Setting or not _G.Setting.WebhookURL or _G.Setting.WebhookURL == "" then
     warn("[ JOPA ] ไม่พบ WebhookURL กรุณาตั้งค่าใน _G.Setting.WebhookURL")
     return
 end
 
+-- ======================================
+-- 📌 ฟังก์ชันส่งแจ้งเตือน Discord
+-- ======================================
 local HttpService = game:GetService("HttpService")
 local function sendDiscord(data)
     local json = HttpService:JSONEncode(data)
@@ -20,6 +29,9 @@ local function sendDiscord(data)
     })
 end
 
+-- ======================================
+-- 📌 ฟังก์ชันส่งสถานะผู้เล่น (รวม Money/Bank + Embed)
+-- ======================================
 local function sendStatus()
     local player = game.Players.LocalPlayer
     local money = "N/A"
@@ -36,8 +48,6 @@ local function sendStatus()
         end
     end
 
-local function sendStatus()
-    local player = game.Players.LocalPlayer
     local embed = {
         ["username"] = "[ JOPA ] BlockSpin Logger",
         ["embeds"] = {{
@@ -46,17 +56,20 @@ local function sendStatus()
             ["fields"] = {
                 {["name"] = "👤 User", ["value"] = player.Name, ["inline"] = true},
                 {["name"] = "✅ Status", ["value"] = "ออนไลน์", ["inline"] = true},
-                {["name"] = "💰 Money", ["value"] = tostring(player:FindFirstChild("leaderstats") and player.leaderstats.Money.Value or "N/A"), ["inline"] = true},
-                {["name"] = "🏦 Bank", ["value"] = tostring(player:FindFirstChild("leaderstats") and player.leaderstats.Bank.Value or "N/A"), ["inline"] = true},
+                {["name"] = "💰 Money", ["value"] = money, ["inline"] = true},
+                {["name"] = "🏦 Bank", ["value"] = bank, ["inline"] = true},
             },
             ["thumbnail"] = {["url"] = "https://img2.pic.in.th/pic/file_000000007ca061f7a4998f8f14959e56-removebg-preview.png"}, -- โลโก้มุมขวาบน
-            ["image"] = {["url"] = "https://img2.pic.in.th/pic/banner-jopa-studiodc27e67dee058684.gif"},     -- แบนเนอร์ด้านล่างเต็ม
+            ["image"] = {["url"] = "https://img2.pic.in.th/pic/banner-jopa-studiodc27e67dee058684.gif"}, -- แบนเนอร์ด้านล่างเต็ม
             ["footer"] = {["text"] = "เวลา: " .. os.date("%Y-%m-%d %H:%M:%S")}
         }}
     }
     sendDiscord(embed)
 end
 
+-- ======================================
+-- 📌 เรียกใช้ทุก ๆ 10 นาที
+-- ======================================
 while task.wait(600) do
     pcall(sendStatus)
 end
