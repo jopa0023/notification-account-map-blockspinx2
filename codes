@@ -1,0 +1,76 @@
+local HttpService = game:GetService("HttpService")
+local Players = game:GetService("Players")
+
+local player = Players.LocalPlayer
+local gui = player:WaitForChild("PlayerGui")
+
+local Config = loadfile("Config.lua")()
+local DISCORD_WEBHOOK = Config.WebhookURL
+รับ
+local requestFunc = (syn and syn.request) or (http and http.request) or request or http_request
+if not requestFunc then
+    warn("❌ Executor ของคุณไม่รองรับ HTTP Request")
+    return
+end
+
+local function getCash()
+    local cashValue = "N/A"
+    local cashGui = gui:FindFirstChild("CashGui")
+    if cashGui then
+        for _, obj in ipairs(cashGui:GetDescendants()) do
+            if obj:IsA("TextLabel") and string.find(obj.Text, "%$") then
+                cashValue = obj.Text
+                break
+            end
+        end
+    end
+    return cashValue
+end
+
+local function getBankMoney()
+    local bankValue = "N/A"
+    for _, obj in ipairs(gui:GetDescendants()) do
+        if obj:IsA("TextLabel") and string.find(obj.Text, "Bank Balance") then
+            bankValue = obj.Text
+        end
+    end
+    return bankValue
+end
+
+local function sendToDiscord()
+    local data = {
+        ["username"] = "BlockSpin | Notification",
+        ["avatar_url"] = "https://img2.pic.in.th/pic/file_000000007ca061f7a4998f8f14959e56-removebg-preview.png",
+        ["embeds"] = {{
+            ["title"] = "📢 Map : Block Spin",
+            ["description"] = string.format("• User : %s\n• Status : %s\n• Money : %s\n• Bank Money : %s",
+                player.Name,
+                "ออนไลน์ ✅",
+                getCash(),
+                getBankMoney()
+            ),
+            ["color"] = 65280,
+            ["thumbnail"] = { ["url"] = "https://img2.pic.in.th/pic/file_000000007ca061f7a4998f8f14959e56-removebg-preview.png" }, -- โลโก้ขวาบน embed
+            ["image"] = { ["url"] = "https://img2.pic.in.th/pic/banner-jopa-studiodc27e67dee058684.gif" },     -- แบนเนอร์แนวยาวล่าง
+            ["footer"] = {
+                ["text"] = "⏰ " .. os.date("%d/%m/%Y %H:%M:%S")
+            }
+        }}
+    }
+
+    local jsonData = HttpService:JSONEncode(data)
+
+    requestFunc({
+        Url = DISCORD_WEBHOOK,
+        Method = "POST",
+        Headers = {
+            ["Content-Type"] = "application/json"
+        },
+        Body = jsonData
+    })
+end
+
+while true do
+    sendToDiscord()
+    wait(600)
+end
